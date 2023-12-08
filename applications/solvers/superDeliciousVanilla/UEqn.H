@@ -14,7 +14,7 @@
       + momentumSpongeLayers.force()
       + momentumPerturbationZones.source()
     //+ (1.0 - scalar(bodyForceStabilization)) * actuatorTurbineArray.source()
-      + fvOptions(U)
+      + (1.0 - scalar(fvOptionSourceStabilization)) * fvOptions(U)
     );
 
     UEqn.relax();
@@ -33,6 +33,7 @@
                   - fvc::snGrad(p_rgh)
                   + Boussinesq.source()
                 //+ scalar(bodyForceStabilization) * fvc::flux(actuatorTurbineArray.source())/mesh.magSf()
+                  + scalar(fvOptionSourceStabilization) * fvc::flux(fvOptions(U))/mesh.magSf()
                 )*mesh.magSf()
             )
         );

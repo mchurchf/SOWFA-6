@@ -10,11 +10,10 @@
     // In the equations it is always multiplied with inv(A).  This is HbyA.
     volVectorField HbyA(constrainHbyA(rAU*UEqn.H(), U, p_rgh));
 
-    // This is the Boussinesq buoyancy term multipled by the inverse of the A operator.
+    // These are the various source terms multiplied by the inverse of the A operator.
     surfaceScalarField phig(rAUf * Boussinesq.source() * mesh.magSf());
-
-    // This is the actuator line/disk body force term multiplied by the inverse of the A operator.
   //surfaceScalarField phiF(rAUf * scalar(bodyForceStabilization) * fvc::flux(actuatorTurbineArray.source()));
+    surfaceScalarField phiS(rAUf * scalar(fvOptionSourceStabilization) * fvc::flux(fvOptions(U));
 
     // Project HbyA to cell faces and apply a correction for time stepping scheme.
     surfaceScalarField phiHbyA
@@ -42,6 +41,7 @@
 
     phiHbyA += phig;
   //phiHbyA += phiF;
+    phiHbyA += phiS;
 
     // Update the fixedFluxPressure BCs to ensure flux consistency
     setSnGrad<fixedFluxPressureFvPatchScalarField>
@@ -82,8 +82,9 @@
             // calculated from the relaxed pressure
             U = HbyA + rAU*fvc::reconstruct(
                                               ( 
-                                                 phig 
+                                                  phig 
                                                //+phiF 
+                                                 +phiS
                                                  -p_rghEqn.flux() 
                                               )/rAUf
                                            );

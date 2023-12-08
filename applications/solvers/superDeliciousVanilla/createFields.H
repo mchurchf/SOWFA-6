@@ -384,6 +384,7 @@
     
     // - User set fvOptions, such as additional source terms.
     #include "createFvOptions.H"
+    bool fvOptionSourceStabilization = mesh.schemesDict().lookupOrDefault<bool>("fvOptionSourceStabilization",true);
 
 
 
