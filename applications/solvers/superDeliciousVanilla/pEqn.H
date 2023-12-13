@@ -13,7 +13,7 @@
     // These are the various source terms multiplied by the inverse of the A operator.
     surfaceScalarField phig(rAUf * Boussinesq.source() * mesh.magSf());
   //surfaceScalarField phiF(rAUf * scalar(bodyForceStabilization) * fvc::flux(actuatorTurbineArray.source()));
-    surfaceScalarField phiS(rAUf * scalar(fvOptionSourceStabilization) * fvc::flux(fvOptions(U));
+    surfaceScalarField phiS(rAUf * scalar(fvOptionSourceStabilization) * fvc::flux(fvOptionsVelocitySource));
 
     // Project HbyA to cell faces and apply a correction for time stepping scheme.
     surfaceScalarField phiHbyA
@@ -90,6 +90,7 @@
                                            );
             U.correctBoundaryConditions();
             fvOptions.correct(U);
+            #include "updateFvOptionsSource.H"
         }
     }
 

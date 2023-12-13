@@ -20,9 +20,11 @@
     UEqn.relax();
 
     fvOptions.constrain(UEqn);
+    #include "updateFvOptionsSource.H"
 
     if (pimple.momentumPredictor())
     {
+        fvVectorMatrix fvOptionsContribution = fvOptions(U);
         solve
         (
             UEqn
@@ -33,12 +35,13 @@
                   - fvc::snGrad(p_rgh)
                   + Boussinesq.source()
                 //+ scalar(bodyForceStabilization) * fvc::flux(actuatorTurbineArray.source())/mesh.magSf()
-                  + scalar(fvOptionSourceStabilization) * fvc::flux(fvOptions(U))/mesh.magSf()
+                  + scalar(fvOptionSourceStabilization) * fvc::flux(fvOptionsVelocitySource)/mesh.magSf()
                 )*mesh.magSf()
             )
         );
 
         fvOptions.correct(U);
+        #include "updateFvOptionsSource.H"
     }
 
   //if (pimple.finalPimpleIter() && pimple.finalPISOIter())
