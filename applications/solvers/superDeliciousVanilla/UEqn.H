@@ -24,7 +24,6 @@
 
     if (pimple.momentumPredictor())
     {
-        fvVectorMatrix fvOptionsContribution = fvOptions(U);
         solve
         (
             UEqn
