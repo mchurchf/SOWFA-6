@@ -126,7 +126,7 @@ void velocityABLWallFunctionFvPatchField::updateCoeffs()
     const volVectorField& UCell = db().objectRegistry::lookupObject<volVectorField>("U");
 
 //  Interpolate velocity on the cell faces.
-    surfaceVectorField UFace = fvc::interpolate(UCell);
+    surfaceVectorField UFace(fvc::interpolate(UCell));
  
 //  Take the surfac normal gradient of the velocity field
 //  surfaceVectorField snGradU = fvc::snGrad(UCell);
@@ -149,10 +149,10 @@ void velocityABLWallFunctionFvPatchField::updateCoeffs()
 
 //  Get perpendicular distance from cell center to boundary.  In other words,
 //  the height of the z_1/2 grid level.
-    const scalarField z12 = 1.0/patch().deltaCoeffs();
+    const scalarField z12(1.0/patch().deltaCoeffs());
 
 //  Get face normal vectors
-    vectorField normal = patch().nf();
+    vectorField normal(patch().nf());
 
 //  Get resolved U vector at boundary face (UBoundaryFace refers to patch().lookupPatchField...)
     const fvPatchVectorField& UBoundaryFace = patch().lookupPatchField<volVectorField, vector>("U");
@@ -163,7 +163,7 @@ void velocityABLWallFunctionFvPatchField::updateCoeffs()
 //        U_||(z_1/2) = U(z_1/2) - (U(z_1/2) dot |S_n|)*|S_n|
 //
 //  where S_n is the surface normal vector.
-    vectorField UParallel12 = UBoundaryFace.patchInternalField();
+    vectorField UParallel12(UBoundaryFace.patchInternalField());
     forAll(UBoundaryFace, faceI)
     {
 	UParallel12[faceI] = UParallel12[faceI] - ((UParallel12[faceI] & normal[faceI]) * normal[faceI]);

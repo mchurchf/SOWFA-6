@@ -57,6 +57,13 @@
     }
 
 
+    //- The initial pressure field is often set to zero, which is not a great initial
+    //  condition.  A better option is to solve the pressure field for hydrostatic
+    //  conditions.  If the user wants this, set this flag to true.
+    bool initPressureField = isRestart ? false : true;
+    initPressureField = runTime.controlDict().lookupOrDefault<bool>("initHydroStatic",initPressureField);
+
+
     //- Should the velocity flux non-coupled BCs be updated before entering the time loop.
     bool updatePhiUncoupledBoundariesOnRestart(ABLProperties.lookupOrDefault<bool>("updatePhiUncoupledBoundariesOnRestart",false));
 
@@ -339,13 +346,13 @@
     
     // - Geostrophic/mesoscale source terms [<field units>/s].
     Info << "Creating geostrophic/mesoscale source term(s)" << endl;
-    drivingForce<vector> momentumGeoMesoTerm(ABLProperties, "momentum",U);
-    drivingForce<scalar> temperatureGeoMesoTerm(ABLProperties, "temperature",T);
+    drivingForce<vector> momentumGeoMesoTerm(ABLProperties, "momentum", Coriolis, U);
+    drivingForce<scalar> temperatureGeoMesoTerm(ABLProperties, "temperature", Coriolis, T);
 
 
     // - Hurricane source term [m/s^2].
     Info << "Creating G. Bryan's 'simple' hurricane source term" << endl;
-    hurricaneSource hurricaneMesoTerm(ABLProperties, U, Coriolis);
+    hurricaneSource hurricaneMesoTerm(ABLProperties, U);
     
     
     // - Buoyancy term [m/s^2].

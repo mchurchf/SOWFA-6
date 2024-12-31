@@ -130,7 +130,7 @@ void SchumannGrotzbachFvPatchField::evaluate
 
     // ---Get preliminary information
     //    Get face normal vectors
-    const vectorField normal = patch().nf();
+    const vectorField normal(patch().nf());
 
     //    Get face areas (individual and global sum) (note that "gSum" is used as opposed
     //    to "sum" because "gSum" is parallel-aware --- it gathers sums from each processor
@@ -145,7 +145,7 @@ void SchumannGrotzbachFvPatchField::evaluate
     //     << "g    = " << g    << endl;
 
     //    Get perpendicular distance from cell center to boundary
-    const scalarField z1 = 1.0/patch().deltaCoeffs();
+    const scalarField z1(1.0/patch().deltaCoeffs());
     scalar z1Mean = gSum(z1 * area)/areaTotal;
 
     //    Get the average surface roughness height
@@ -173,7 +173,7 @@ void SchumannGrotzbachFvPatchField::evaluate
     //    n_f is the surface face normal unit vector.
     //    Get the velocity in the cells adjacent to the boundary
     const fvPatchVectorField& UPatch = patch().lookupPatchField<volVectorField, vector>("U");
-    vectorField UParallel = UPatch.patchInternalField();
+    vectorField UParallel(UPatch.patchInternalField());
     UParallel = UParallel - ((UParallel & normal) * normal);
     vector UParallelMean = gSum(UParallel * area) / areaTotal;
     scalar UParallelMeanMag = mag(UParallelMean);
@@ -208,7 +208,7 @@ void SchumannGrotzbachFvPatchField::evaluate
     }
 
     //    Get magnitudes and means of the terrain-local velocity
-    scalarField UParallelPMag = mag(UParallelP);
+    scalarField UParallelPMag(mag(UParallelP));
   //scalar UParallelPMagMean = gSum(UParallelPMag * area) / areaTotal;
     vector UParallelPMean = gSum(UParallelP * area) / areaTotal;
     scalar UParallelPMeanMag = mag(UParallelPMean);
@@ -220,7 +220,7 @@ void SchumannGrotzbachFvPatchField::evaluate
 
     // ---Get the boundary temperature flux
     const fvPatchField<vector>& qwVec = patch().lookupPatchField<volVectorField, vector>("qwall");
-    scalarField qw = qwVec & normal;
+    scalarField qw(qwVec & normal);
     scalar qwMean = gSum(qw * area)/areaTotal;
     //Info << "qw = " << qw << tab
     //     << "qwMean = " << qwMean << endl;

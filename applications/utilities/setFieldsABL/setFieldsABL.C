@@ -235,7 +235,7 @@ forAll(zProfile,i)
 // Get distance from the wall only if required.
 vector up = vector::zero;
 up.z() = 1.0;
-volScalarField d = mesh.C() & up;    
+volScalarField d(mesh.C() & up);    
 if (useWallDistZ)
 {
     Info << "Calculating wall distance..." << endl;

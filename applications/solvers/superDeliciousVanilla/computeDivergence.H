@@ -2,8 +2,8 @@
 {
 
     // Compute divergence cell by cell and report statistics.
-    volScalarField divPhi = fvc::div(phi);
-    volScalarField divPhiMag  = pow(pow(divPhi,2),0.5);
+    volScalarField divPhi(fvc::div(phi));
+    volScalarField divPhiMag(pow(pow(divPhi,2),0.5));
     scalar minLocalPhiContErr = min(divPhiMag).value();
     reduce(minLocalPhiContErr, minOp<scalar>());
     scalar maxLocalPhiContErr = max(divPhiMag).value();

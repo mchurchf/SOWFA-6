@@ -207,7 +207,7 @@ void kEqnABL<BasicTurbulenceModel>::correct()
 
     // Use the stability-dependent and grid-dependent length scales to form the
     // turbulent Prandtl number.
-    volScalarField Prt = 1.0/(1.0 + (2.0*this->l_/this->delta()));
+    volScalarField Prt(1.0/(1.0 + (2.0*this->l_/this->delta())));
 
     // Ce is stability dependent, so set it here.  In Moeng's paper (1984), she says
     // Ce = 0.19 + (0.51*l_/delta()), but later in Moeng and Wyngaard's paper (1988),

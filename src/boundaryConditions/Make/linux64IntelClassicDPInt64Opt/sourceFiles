@@ -1,0 +1,5 @@
+SOURCE = \
+$(surfaceStressModels)/SchumannGrotzbach/SchumannGrotzbachFvPatchField.C \
+$(surfaceVelocityModels)/velocityABLWallFunction/velocityABLWallFunctionFvPatchField.C \
+$(surfaceHeatFluxModels)/specifiedSurfaceTemperature/specifiedSurfaceTemperatureFvPatchField.C \
+$(inflowOutflow)/timeVaryingMappedInletOutlet/timeVaryingMappedInletOutletFvPatchFields.C 

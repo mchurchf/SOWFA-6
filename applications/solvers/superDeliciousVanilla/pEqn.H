@@ -28,7 +28,7 @@
     // applies the correction indirectly by setting the pressure gradient to be used in
     // the fixedFluxPressure boundary condition on p_rgh, or directly if the zeroGradient
     // boundary condition on p_rgh is used.
-    surfaceScalarField phiFixedFlux = 1.0*phiHbyA;
+    surfaceScalarField phiFixedFlux(1.0*phiHbyA);
 
     adjustPhiExtended(phiFixedFlux, U, p_rgh, coupledInflowPatches);
 

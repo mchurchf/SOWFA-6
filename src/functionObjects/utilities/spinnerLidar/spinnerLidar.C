@@ -522,7 +522,7 @@ bool Foam::functionObjects::spinnerLidar::execute()
 
         // Take the gradient of the field for use when doing
         // trilinear interpolation to the lidar sample points.
-        volTensorField gradU = fvc::grad(U_);
+        volTensorField gradU(fvc::grad(U_));
 
         // Set up the logic to do the beam sampling.  This part is a bit 
         // messy and likely be streamlined.  The difficulty is that the 
