@@ -164,7 +164,7 @@ void specifiedSurfaceTemperatureFvPatchField::evaluate
 
 
     //    Get face normal vectors
-    const vectorField normal = patch().nf();
+    const vectorField normal(patch().nf());
 
     //    Get face areas (individual and global sum) (note that "gSum" is used as opposed
     //    to "sum" because "gSum" is parallel-aware --- it gathers sums from each processor
@@ -179,7 +179,7 @@ void specifiedSurfaceTemperatureFvPatchField::evaluate
     //     << "g    = " << g    << endl;
 
     //    Get perpendicular distance from cell center to boundary
-    const scalarField z1 = 1.0/patch().deltaCoeffs();
+    const scalarField z1(1.0/patch().deltaCoeffs());
     scalar z1Mean = gSum(z1 * area)/areaTotal;
 
     //Info << "z1Mean = " << z1Mean << endl;
@@ -205,7 +205,7 @@ void specifiedSurfaceTemperatureFvPatchField::evaluate
     // ---Get the temperature adjacent to the boundary
     const volScalarField& T = db().objectRegistry::lookupObject<volScalarField>("T");
     const fvPatchScalarField& TPatch = T.boundaryField()[patch().index()]; 
-    scalarField TAdjacent = TPatch.patchInternalField();
+    scalarField TAdjacent(TPatch.patchInternalField());
     scalar TAdjacentMean = gSum(TAdjacent * area) / areaTotal;
 
 
@@ -213,7 +213,7 @@ void specifiedSurfaceTemperatureFvPatchField::evaluate
     scalar TSurfaceMean = TSurface_->value(t);
     
     // ---Find temperature difference between surface and interior
-    scalarField deltaT = TAdjacent - TSurface_->value(t);
+    scalarField deltaT(TAdjacent - TSurface_->value(t));
     scalar deltaTMean = gSum(deltaT * area) / areaTotal;
     Info << "TSurfaceMean = " << TSurfaceMean << tab
          << "TAdjacentMean = " << TAdjacentMean << tab
@@ -230,7 +230,7 @@ void specifiedSurfaceTemperatureFvPatchField::evaluate
     //    n_f is the surface face normal unit vector.
     //    Get the velocity in the cells adjacent to the boundary
     const fvPatchVectorField& UPatch = patch().lookupPatchField<volVectorField, vector>("U");
-    vectorField UParallel = UPatch.patchInternalField();
+    vectorField UParallel(UPatch.patchInternalField());
     UParallel = UParallel - ((UParallel & normal) * normal);
     vector UParallelMean = gSum(UParallel * area) / areaTotal;
     scalar UParallelMeanMag = mag(UParallelMean);
@@ -265,7 +265,7 @@ void specifiedSurfaceTemperatureFvPatchField::evaluate
     }
 
     //    Get magnitudes and means of the terrain-local velocity
-    scalarField UParallelPMag = mag(UParallelP);
+    scalarField UParallelPMag(mag(UParallelP));
   //scalar UParallelPMagMean = gSum(UParallelPMag * area) / areaTotal;
   //vector UParallelPMean = gSum(UParallelP * area) / areaTotal;
   //scalar UParallelPMeanMag = mag(UParallelPMean);

@@ -1,0 +1,4 @@
+SOURCE = \
+windRoseToCartesian/windRoseToCartesian.C \
+geometricTransformations/geometricTransformations.C \
+adjustPhiExtended/adjustPhiExtended.C 

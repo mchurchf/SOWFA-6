@@ -12,13 +12,15 @@ PROGRAM toof
      ! variables for using netcdf
    INCLUDE 'netcdf.inc'
    INTEGER, PARAMETER :: MAXFILES = 20
-   CHARACTER(LEN=255) :: flnm(MAXFILES),arg,outnameT,outnamePd,outnameU,outnameHFX,vname,comstr,dirpath,latlongpath
+   CHARACTER(LEN=255) :: flnm(MAXFILES),arg,outnameT,outnamePd,outnameU,outnameHFX,vname,comstr,dirpath,latlongpath,phbpath	!(dmajor: added phbpath 7/15/24)
    CHARACTER(LEN=19)  :: Times(100),tmpstr,secstr
    CHARACTER(LEN=NF_MAX_NAME) :: dimname
    LOGICAL :: ic, ctrl, have_hfx, use_hfx  ! whether or not to do an IC file too
    LOGICAL :: read_latlong ! read XLAT and XLONG from a separate file if its not in the provided solution file
+   LOGICAL :: read_phb ! read PH and PHB from a separate file if its not in the provided solution file (dmajor: added 7/15/24)
+   LOGICAL :: idealSim ! tell the routine that latitude/longitude not provided from WRF, build cartesian grid instead (dmajor: added 8/13/24)
    LOGICAL :: input_rotation_angle, check_inflow
-   INTEGER :: it,ncid(MAXFILES),stat,iarg,narg,varid,strt(4),cnt(4),xtype,storeddim,dimids(4),natts,latlongid
+   INTEGER :: it,ncid(MAXFILES),stat,iarg,narg,varid,strt(4),cnt(4),xtype,storeddim,dimids(4),natts,latlongid,phbid	!(dmajor: added phbid 7/15/24)
    REAL, EXTERNAL :: finterp
    INTEGER, EXTERNAL :: sec_of_day, sec_of_day_full
    LOGICAL, EXTERNAL :: valid_date
@@ -47,8 +49,8 @@ PROGRAM toof
    REAL, DIMENSION(:,:,:), ALLOCATABLE :: zzcol
    REAL, DIMENSION(:,:,:), ALLOCATABLE :: zcol
    INTEGER kz(0:1,0:1), kzz(0:1,0:1), ibdy, ipoint
-   REAL :: hfx_new, u_new, v_new, t_new, t_ground, pres_new, pd, w_new, theta, costheta, sintheta, dx
-   REAL :: dx_check
+   REAL :: hfx_new, u_new, v_new, t_new, t_ground, pres_new, pd, w_new, theta, costheta, sintheta, dx, dy !(dmajor: added dx, dy 7/15/24)
+   REAL :: dx_check, dy_check !(dmajor: added dy_check 7/15/24)
    INTEGER :: ids_check , ide_check , jds_check , jde_check , kds_check , kde_check
    INTEGER :: i , j , k 
    INTEGER :: ii, jj, kk
@@ -65,6 +67,8 @@ PROGRAM toof
    read_latlong = .FALSE.
    input_rotation_angle = .FALSE.
    check_inflow = .FALSE.
+   read_phb = .FALSE.			!(dmajor 7/15/24: added bool to read for ph/phb file)
+   idealSim = .FALSE.			!(dmajor 8/13/24: added bool for command line option to specify ideal WRF simulation)
 
    it = 1
    sec_offset = 0
@@ -100,6 +104,10 @@ PROGRAM toof
          iarg = iarg + 1 
          CALL getarg(iarg,latlongpath)
          read_latlong = .TRUE.
+       ELSE IF ( TRIM(arg) .EQ. '-phbfile' ) THEN	!(dmajor: added 7/15/24)
+         iarg = iarg + 1 
+         CALL getarg(iarg,phbpath)
+         read_phb = .TRUE.
        ELSE IF ( TRIM(arg) .EQ. '-rotation' ) THEN
          iarg = iarg + 1
          CALL getarg(iarg,arg)
@@ -108,6 +116,8 @@ PROGRAM toof
          input_rotation_angle = .TRUE.
        ELSE IF ( TRIM(arg) .EQ. '-checkInflow' ) THEN
          check_inflow = .TRUE.
+       ELSE IF ( TRIM(arg) .EQ. '-idealSim' ) THEN	!(dmajor 8/13/24: added flag to check for ideal Sim input)
+         idealSim = .TRUE.
        ENDIF
      ELSE
        nfiles = nfiles + 1
@@ -136,6 +146,10 @@ PROGRAM toof
      stat=NF_GET_ATT_REAL(ncid(i),NF_GLOBAL,'DX',dx) ; 
      IF( i .EQ. 1 ) dx_check = dx
      CALL ncderrcheck( __LINE__,stat )
+     stat=NF_GET_ATT_REAL(ncid(i),NF_GLOBAL,'DY',dy) ; !(dmajor: added 7/15/24)
+     IF( i .EQ. 1 ) dy_check = dy
+     CALL ncderrcheck( __LINE__,stat )
+
 !     stat = NF_GET_ATT_INT (ncid(i),NF_GLOBAL,'WEST-EAST_PATCH_END_STAG',ide)    ; ids = 1 ; 
 !     IF( i .EQ. 1 ) ide_check = ide 
 !     CALL ncderrcheck( __LINE__,stat )
@@ -168,6 +182,9 @@ PROGRAM toof
        stat = 0
        IF ( dx .NE. dx_check ) THEN
          stat = 1 ; write(0,*)'DX ',TRIM(flnm(i)),' does not match ',TRIM(flnm(i))
+       ENDIF
+       IF ( dy .NE. dy_check ) THEN
+         stat = 1 ; write(0,*)'DY ',TRIM(flnm(i)),' does not match ',TRIM(flnm(i))	!(dmajor: added 7/15/24)
        ENDIF
        IF ( ide .NE. ide_check ) THEN
          stat = 1 ; write(0,*)'WEST-EAST_PATCH_END_STAG in ',TRIM(flnm(i)),' does not match ',TRIM(flnm(i))
@@ -222,6 +239,14 @@ PROGRAM toof
      ! Assume XLAT and XLONG are identical for all input files
      CALL getvar_real(ctrl,latlongid,1,'XLAT' ,xlat ,it,2,ips,ipe-1,jps,jpe-1,1,1)
      CALL getvar_real(ctrl,latlongid,1,'XLONG',xlong,it,2,ips,ipe-1,jps,jpe-1,1,1)
+   ELSE IF ( idealSim ) THEN	!(dmajor 8/15/24: added conditional to build cartesian grid from DX, DY if ideal WRF sim)
+     write(*,*) 'Ideal WRF simulation... building cartesian grid.'
+       DO i=ips,ipe-1
+         DO j=jps,jpe-1
+           xlat(i,j) = (j-1)*dy
+           xlong(i,j) = (i-1)*dx
+         ENDDO
+       ENDDO
    ELSE
      ! Original operation
      CALL getvar_real(ctrl,ncid,nfiles,'XLAT' ,xlat ,it,2,ips,ipe-1,jps,jpe-1,1,1)
@@ -272,14 +297,34 @@ PROGRAM toof
    hfx = 0.
 
    write(*,*) 'Getting variables from solution file'
-   CALL getvar_real(ctrl,ncid,nfiles,'PH' ,ph ,it,3,ips,ipe-1,jps,jpe-1,kps,kpe  )
-   CALL getvar_real(ctrl,ncid,nfiles,'PHB',phb,it,3,ips,ipe-1,jps,jpe-1,kps,kpe  )
+   
+   ! (dmajor 8/5/24) Sometimes for ideal simulations PH/PHB is provided in an external file
+   IF ( read_phb ) THEN
+     write(*,*) 'Reading PH/PHB from ',trim(phbpath)
+     stat = NF_OPEN(phbpath, NF_NOWRITE, phbid)
+     CALL ncderrcheck( __LINE__,stat )
+     ! Assume PH and PHB are identical for all input files
+     CALL getvar_real(ctrl,phbid,1,'PH',ph ,it,3,ips,ipe-1,jps,jpe-1,kps,kpe)
+     IF (.NOT. ctrl) THEN
+       write(*,*) 'Could not find PH, looking for PH_1...'
+       ctrl = .TRUE.  ! reset ctrl bool
+       CALL getvar_real(ctrl,phbid,1,'PH_1',ph ,it,3,ips,ipe-1,jps,jpe-1,kps,kpe)
+     ENDIF
+     CALL getvar_real(ctrl,phbid,1,'PHB',phb,it,3,ips,ipe-1,jps,jpe-1,kps,kpe)
+     CALL getvar_real(ctrl,phbid,1,'PB' ,pb ,it,3,ips,ipe-1,jps,jpe-1,kps,kpe-1)
+   ELSE
+     ! Original operation
+     CALL getvar_real(ctrl,ncid,nfiles,'PH' ,ph ,it,3,ips,ipe-1,jps,jpe-1,kps,kpe  )
+     CALL getvar_real(ctrl,ncid,nfiles,'PHB',phb,it,3,ips,ipe-1,jps,jpe-1,kps,kpe  )
+     CALL getvar_real(ctrl,ncid,nfiles,'PB' ,pb ,it,3,ips,ipe-1,jps,jpe-1,kps,kpe-1)
+   END IF
+
+
    CALL getvar_real(ctrl,ncid,nfiles,'W'  ,w  ,it,3,ips,ipe-1,jps,jpe-1,kps,kpe  )
    CALL getvar_real(ctrl,ncid,nfiles,'T'  ,t  ,it,3,ips,ipe-1,jps,jpe-1,kps,kpe-1)
    CALL getvar_real(ctrl,ncid,nfiles,'U'  ,u_ ,it,3,ips,ipe  ,jps,jpe-1,kps,kpe-1)
    CALL getvar_real(ctrl,ncid,nfiles,'V'  ,v_ ,it,3,ips,ipe-1,jps,jpe  ,kps,kpe-1)
    CALL getvar_real(ctrl,ncid,nfiles,'P'  ,p  ,it,3,ips,ipe-1,jps,jpe-1,kps,kpe-1)
-   CALL getvar_real(ctrl,ncid,nfiles,'PB' ,pb ,it,3,ips,ipe-1,jps,jpe-1,kps,kpe-1)
 
 
    have_hfx = .FALSE.  ! false value going in says this field is required
@@ -344,9 +389,9 @@ PROGRAM toof
        OPEN( 76 , file=TRIM(outnameT), form="formatted" )
        CALL write_header_scalar( 76, bdy(ibdy)%npoints , ibdy.NE.INTERIOR , sec , "T"  )
 
-       outnamePd = TRIM(dirpath)//TRIM(ADJUSTL(secstr))//"/p_rgh"
-       OPEN( 77 , file=TRIM(outnamePd), form="formatted" )
-       CALL write_header_scalar( 77, bdy(ibdy)%npoints , ibdy.NE.INTERIOR , sec , "p_rgh" )
+       !outnamePd = TRIM(dirpath)//TRIM(ADJUSTL(secstr))//"/p_rgh"
+       !OPEN( 77 , file=TRIM(outnamePd), form="formatted" )
+       !CALL write_header_scalar( 77, bdy(ibdy)%npoints , ibdy.NE.INTERIOR , sec , "p_rgh" )
 
        outnameU = TRIM(dirpath)//TRIM(ADJUSTL(secstr))//"/U"
        OPEN( 78 , file=TRIM(outnameU), form="formatted" )
@@ -410,8 +455,8 @@ PROGRAM toof
            ! convert theta (potential temperature) in WRF to temperature at level of variable and
            ! also at ground level (for use below in computing pd)
            ! formula requires pressure to be in pascals: 1 pascal = 0.01 millibars
-         t_new    =  t_new  * ( (pres_new / P1000MB)**(R_D/CP))
-         t_ground =  t(i,j,1) * ( (pres(i,j,1) / P1000MB)**(R_D/CP))
+         !t_new    =  t_new  * ( (pres_new / P1000MB)**(R_D/CP))
+         !t_ground =  t(i,j,1) * ( (pres(i,j,1) / P1000MB)**(R_D/CP))
 #else
          t_ground =  t(i,j,1)
 #endif
@@ -420,7 +465,7 @@ PROGRAM toof
            ! that is, pd = p / rho - g*z .  Note, however, that we don.t have density so compute density at
            ! surface as rho0 = p0 / (R*T0), where R is 286.9 and T0 is surface temp. Substituting for rho
            ! into the above, this becomes:
-         pd = (pres_new*R_D*t_ground)/pres(i,j,1) - g * of_lz
+           !pd = (pres_new*R_D*t_ground)/pres(i,j,1) - g * of_lz
 
          IF ( ibdy .EQ. BDY_ZS .AND. have_hfx .AND. use_hfx ) THEN
            kzz = 0 ! turn off vertical interpolation in call to finterp
@@ -430,7 +475,7 @@ PROGRAM toof
          ENDIF
 
          WRITE(76,*) t_new 
-         WRITE(77,*) pd
+         !WRITE(77,*) pd
          ! note that positive theta angle (computed above) implies WRF grid is rotated counterclockwise w.r.t. true
          ! see http://en.wikipedia.org/wiki/Rotation_matrix
          WRITE(78,'("(",f12.7," ",f12.7," ",f12.7,")")')u_new*costheta-v_new*sintheta,u_new*sintheta+v_new*costheta,w_new
@@ -440,18 +485,18 @@ PROGRAM toof
 
        ENDDO
         ! close the unit and then run a system command to strip off the first space that Fortran insists on writing
-       CALL write_trailer_T(76,ibdy.EQ.INTERIOR) ; CLOSE( 76 ) ; & 
+       CALL write_trailer_T(76,ibdy.EQ.INTERIOR) ; CLOSE( 76 ) ;  
             comstr = "sed 's/^ //' "//TRIM(outnameT) //"> foo_ ; /bin/mv -f foo_ "// TRIM(outnameT)
        CALL system(TRIM(comstr)) 
-       CALL write_trailer_pd(77,ibdy.EQ.INTERIOR) ; CLOSE( 77 ) ; & 
-            comstr = "sed 's/^ //' "//TRIM(outnamePd) //"> foo_ ; /bin/mv -f foo_ "// TRIM(outnamePd)
-       CALL system(TRIM(comstr)) 
-       CALL write_trailer_U(78,ibdy.EQ.INTERIOR) ;  CLOSE( 78 ) ; & 
+       !CALL write_trailer_pd(77,ibdy.EQ.INTERIOR) ; CLOSE( 77 ) ;  
+       !     comstr = "sed 's/^ //' "//TRIM(outnamePd) //"> foo_ ; /bin/mv -f foo_ "// TRIM(outnamePd)
+       !CALL system(TRIM(comstr)) 
+       CALL write_trailer_U(78,ibdy.EQ.INTERIOR) ;  CLOSE( 78 ) ;  
             comstr = "sed 's/^ //' "//TRIM(outnameU) //"> foo_ ; /bin/mv -f foo_ "// TRIM(outnameU)
        CALL system(TRIM(comstr)) 
        IF ( ibdy .EQ. BDY_ZS .AND. have_hfx .AND. use_hfx ) THEN
-         CALL write_trailer_HFX(79,.FALSE.) ;  CLOSE( 79 ) ; & 
-              comstr = "sed 's/^ //' "//TRIM(outnameU) //"> foo_ ; /bin/mv -f foo_ "// TRIM(outnameU)
+         CALL write_trailer_HFX(79,.FALSE.) ;  CLOSE( 79 ) ;  
+              comstr = "sed 's/^ //' "//TRIM(outnameHFX) //"> foo_ ; /bin/mv -f foo_ "// TRIM(outnameHFX)
          CALL system(TRIM(comstr)) 
        ENDIF
      ENDIF
@@ -516,6 +561,9 @@ SUBROUTINE help
    WRITE(*,'("       -qwall        program should generate temp flux in lower bc file")')
    WRITE(*,'("       -rotation     use specified rotation angle [deg] instead of calculating from XLAT")')
    WRITE(*,'("       -checkInflow  instead of generating boundary data, check inflow/outflow only",/)')
+   WRITE(*,'("       -latlong      read XLAT/XLONG data from external file if not provided in ncdfile",/)')
+   WRITE(*,'("       -phbfile      read PH/PHB data from external file if not provided in ncdfile",/)')
+   WRITE(*,'("       -idealSim     instead of using latitude/longitude, build cartesian grid for ideal WRF simulation",/)')
    STOP
 END SUBROUTINE help
 
@@ -566,7 +614,8 @@ SUBROUTINE getvar_real(ctrl,ncids,numfiles,vname,buf,itime,ndim,ids,ide,jds,jde,
    ENDDO
    IF ( .NOT. found .AND. ctrl ) THEN
      WRITE(0,*)'getvar_real: did not find ',TRIM(vname),' in any input file'
-     STOP 99
+     !(dmajor 8/5/24: getting rid of stop command because use ctrl = False for logicals)
+     !STOP 99
    ENDIF
    ctrl = found
    RETURN
@@ -580,7 +629,7 @@ SUBROUTINE write_header_scalar( unit, n, bc , location, objectname )
    CHARACTER*(*),  INTENT(IN) :: objectname
 
    if ( .NOT. bc ) THEN
-     WRITE(unit,*)'/*---------------------------------------------------------------------------*\'
+     WRITE(unit,*)' /*---------------------------------------------------------------------------*\ '
      WRITE(unit,*)'=========                 |                                                    '
      WRITE(unit,*)'\\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox              '
      WRITE(unit,*)' \\    /   O peration     | Website:  https://openfoam.org                     '
@@ -621,7 +670,7 @@ SUBROUTINE write_header_vector( unit, n, bc, location, objectname )
    CHARACTER*(*),  INTENT(IN) :: objectname
 
    IF ( .NOT. bc ) THEN
-     WRITE(unit,*)'/*---------------------------------------------------------------------------*\'
+     WRITE(unit,*)' /*---------------------------------------------------------------------------*\ '
      WRITE(unit,*)'=========                 |                                                    '
      WRITE(unit,*)'\\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox              '
      WRITE(unit,*)' \\    /   O peration     | Website:  https://openfoam.org                     '
@@ -665,39 +714,44 @@ SUBROUTINE write_trailer_U ( unit, interior )
      WRITE(unit,*)'    lower'
      WRITE(unit,*)'    {'
      WRITE(unit,*)'        type            velocityABLWallFunction;'
-     WRITE(unit,*)'        print           1;'
+     WRITE(unit,*)'        print           true;'
      WRITE(unit,*)'        U               U;'
-     WRITE(unit,*)'        value           uniform (0 0 0);'
+     WRITE(unit,*)'        value           uniform ( 0 0 0 );'
      WRITE(unit,*)'    }'
      WRITE(unit,*)'    upper'
      WRITE(unit,*)'    {'
-     WRITE(unit,*)'        type            timeVaryingMappedFixedValue;'
-     WRITE(unit,*)'        setAverage      0;'
-     WRITE(unit,*)'        offset          (0 0 0);'
+     WRITE(unit,*)'        type            timeVaryingMappedInletOutlet;'
+     WRITE(unit,*)'        value           uniform ( 0 0 0 );'
+     WRITE(unit,*)'        valueFraction   uniform 0;'
+     WRITE(unit,*)'        refValue        uniform ( 0 0 0 );'
      WRITE(unit,*)'    }'
      WRITE(unit,*)'    west'
      WRITE(unit,*)'    {'
-     WRITE(unit,*)'        type            timeVaryingMappedFixedValue;'
-     WRITE(unit,*)'        setAverage      0;'
-     WRITE(unit,*)'        offset          (0 0 0);'
+     WRITE(unit,*)'        type            timeVaryingMappedInletOutlet;'
+     WRITE(unit,*)'        value           uniform ( 0 0 0 );'
+     WRITE(unit,*)'        valueFraction   uniform 0;'
+     WRITE(unit,*)'        refValue        uniform ( 0 0 0 );'
      WRITE(unit,*)'    }'
      WRITE(unit,*)'    east'
      WRITE(unit,*)'    {'
-     WRITE(unit,*)'        type            timeVaryingMappedFixedValue;'
-     WRITE(unit,*)'        setAverage      0;'
-     WRITE(unit,*)'        offset          (0 0 0);'
+     WRITE(unit,*)'        type            timeVaryingMappedInletOutlet;'
+     WRITE(unit,*)'        value           uniform ( 0 0 0 );'
+     WRITE(unit,*)'        valueFraction   uniform 0;'
+     WRITE(unit,*)'        refValue        uniform ( 0 0 0 );'
      WRITE(unit,*)'    }'
      WRITE(unit,*)'    south'
      WRITE(unit,*)'    {'
-     WRITE(unit,*)'        type            timeVaryingMappedFixedValue;'
-     WRITE(unit,*)'        setAverage      0;'
-     WRITE(unit,*)'        offset          (0 0 0);'
+     WRITE(unit,*)'        type            timeVaryingMappedInletOutlet;'
+     WRITE(unit,*)'        value           uniform ( 0 0 0 );'
+     WRITE(unit,*)'        valueFraction   uniform 0;'
+     WRITE(unit,*)'        refValue        uniform ( 0 0 0 );'
      WRITE(unit,*)'    }'
      WRITE(unit,*)'    north'
      WRITE(unit,*)'    {'
-     WRITE(unit,*)'        type            timeVaryingMappedFixedValue;'
-     WRITE(unit,*)'        setAverage      0;'
-     WRITE(unit,*)'        offset          (0 0 0);'
+     WRITE(unit,*)'        type            timeVaryingMappedInletOutlet;'
+     WRITE(unit,*)'        value           uniform ( 0 0 0 );'
+     WRITE(unit,*)'        valueFraction   uniform 0;'
+     WRITE(unit,*)'        refValue        uniform ( 0 0 0 );'
      WRITE(unit,*)'    }'
      WRITE(unit,*)'}'
      WRITE(unit,*)
@@ -724,33 +778,38 @@ SUBROUTINE write_trailer_T ( unit, interior )
      WRITE(unit,*)'    }'
      WRITE(unit,*)'    upper'
      WRITE(unit,*)'    {'
-     WRITE(unit,*)'        type            timeVaryingMappedFixedValue;'
-     WRITE(unit,*)'        setAverage      0;'
-     WRITE(unit,*)'        offset          0;'
+     WRITE(unit,*)'        type            timeVaryingMappedInletOutlet;'
+     WRITE(unit,*)'        value           uniform 0;'
+     WRITE(unit,*)'        valueFraction   uniform 0;'
+     WRITE(unit,*)'        refValue        uniform 0;'
      WRITE(unit,*)'    }'
      WRITE(unit,*)'    west'
      WRITE(unit,*)'    {'
-     WRITE(unit,*)'        type            timeVaryingMappedFixedValue;'
-     WRITE(unit,*)'        setAverage      0;'
-     WRITE(unit,*)'        offset          0;'
+     WRITE(unit,*)'        type            timeVaryingMappedInletOutlet;'
+     WRITE(unit,*)'        value           uniform 0;'
+     WRITE(unit,*)'        valueFraction   uniform 0;'
+     WRITE(unit,*)'        refValue        uniform 0;'
      WRITE(unit,*)'    }'
      WRITE(unit,*)'    east'
      WRITE(unit,*)'    {'
-     WRITE(unit,*)'        type            timeVaryingMappedFixedValue;'
-     WRITE(unit,*)'        setAverage      0;'
-     WRITE(unit,*)'        offset          0;'
+     WRITE(unit,*)'        type            timeVaryingMappedInletOutlet;'
+     WRITE(unit,*)'        value           uniform 0;'
+     WRITE(unit,*)'        valueFraction   uniform 0;'
+     WRITE(unit,*)'        refValue        uniform 0;'
      WRITE(unit,*)'    }'
      WRITE(unit,*)'    south'
      WRITE(unit,*)'    {'
-     WRITE(unit,*)'        type            timeVaryingMappedFixedValue;'
-     WRITE(unit,*)'        setAverage      0;'
-     WRITE(unit,*)'        offset          0;'
+     WRITE(unit,*)'        type            timeVaryingMappedInletOutlet;'
+     WRITE(unit,*)'        value           uniform 0;'
+     WRITE(unit,*)'        valueFraction   uniform 0;'
+     WRITE(unit,*)'        refValue        uniform 0;'
      WRITE(unit,*)'    }'
      WRITE(unit,*)'    north'
      WRITE(unit,*)'    {'
-     WRITE(unit,*)'        type            timeVaryingMappedFixedValue;'
-     WRITE(unit,*)'        setAverage      0;'
-     WRITE(unit,*)'        offset          0;'
+     WRITE(unit,*)'        type            timeVaryingMappedInletOutlet;'
+     WRITE(unit,*)'        value           uniform 0;'
+     WRITE(unit,*)'        valueFraction   uniform 0;'
+     WRITE(unit,*)'        refValue        uniform 0;'
      WRITE(unit,*)'    }'
      WRITE(unit,*)'}'
      WRITE(unit,*)

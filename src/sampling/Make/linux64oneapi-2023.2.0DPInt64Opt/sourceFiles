@@ -1,0 +1,3 @@
+SOURCE = \
+sampledSet/cylinder/cylinderSet.C \
+sampledSet/arrayStructured/arrayStructured.C 

@@ -175,7 +175,7 @@ tmp<volScalarField> LESeddyViscosityABL<BasicTurbulenceModel>::epsilon() const
 template<class BasicTurbulenceModel>
 void LESeddyViscosityABL<BasicTurbulenceModel>::computeLengthScale()
 {
-    volScalarField gradTdotg = fvc::grad(T_) & g_;
+    volScalarField gradTdotg(fvc::grad(T_) & g_);
     volScalarField k_(this->k());
     forAll(gradTdotg,i)
     {

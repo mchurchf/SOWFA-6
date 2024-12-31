@@ -1,0 +1,66 @@
+# 1 "Make/options"
+# 1 "<built-in>"
+# 1 "<command-line>"
+# 8 "<command-line>"
+# 1 "/usr/include/stdc-predef.h" 1 3 4
+
+# 17 "/usr/include/stdc-predef.h" 3 4
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 8 "<command-line>" 2
+# 1 "Make/options"
+sinclude $(GENERAL_RULES)/mplib$(WM_MPLIB)
+sinclude $(RULES)/mplib$(WM_MPLIB)
+
+EXE_INC = -I$(LIB_SRC)/finiteVolume/lnInclude -I$(LIB_SRC)/meshTools/lnInclude $(PFLAGS) $(PINC) -I$(OPENFAST_DIR)/include -I$(HDF5_INCLUDE) 
+
+
+
+
+
+
+
+LIB_LIBS = -lfiniteVolume -lmeshTools -L$(OPENFAST_DIR)/lib -laerodyn14lib -laerodynlib -lbeamdynlib -lelastodynlib -lextptfm_mckflib -lfeamlib -lfoamfastlib -lhydrodynlib -licedynlib -licefloelib -lifwlib -lmaplib -lmoordynlib -lnwtclibs -lopenfastcpplib -lopenfastlib -lopenfast_postlib -lopenfast_prelib -lfoamtypeslib -lorcaflexlib -lscfastlib -lsctypeslib -lservodynlib -lsubdynlib 
+# 40 "Make/options"
+

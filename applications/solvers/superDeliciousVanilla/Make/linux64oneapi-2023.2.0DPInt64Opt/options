@@ -1,0 +1,62 @@
+# 1 "Make/options"
+# 1 "<built-in>"
+# 1 "<command-line>"
+# 8 "<command-line>"
+# 1 "/usr/include/stdc-predef.h" 1 3 4
+
+# 17 "/usr/include/stdc-predef.h" 3 4
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 8 "<command-line>" 2
+# 1 "Make/options"
+sinclude $(GENERAL_RULES)/mplib$(WM_MPLIB)
+sinclude $(RULES)/mplib$(WM_MPLIB)
+
+EXE_INC = -I. -I$(LIB_SRC)/TurbulenceModels/turbulenceModels/lnInclude -I$(LIB_SRC)/TurbulenceModels/incompressible/lnInclude -I$(LIB_SRC)/transportModels -I$(LIB_SRC)/transportModels/incompressible/singlePhaseTransportModel -I$(LIB_SRC)/sampling/lnInclude -I$(LIB_SRC)/meshTools/lnInclude -I$(LIB_SRC)/finiteVolume/lnInclude -I$(SOWFA_DIR)/src/boundaryConditions/lnInclude -I$(SOWFA_DIR)/src/ABLForcing/lnInclude -I$(SOWFA_DIR)/src/meshTools/lnInclude -I$(SOWFA_DIR)/src/miscTools/lnInclude -I$(SOWFA_DIR)/src/turbineModels/turbineModelsOpenFAST/lnInclude $(PFLAGS) $(PINC) -I$(OPENFAST_DIR)/include -I$(HDF5_INCLUDE)
+# 22 "Make/options"
+
+
+EXE_LIBS = -L$(SOWFA_LIBBIN) -lturbulenceModels -lincompressibleTurbulenceModels -lincompressibleTransportModels -lsampling -lmeshTools -lfiniteVolume -lfvOptions -lSOWFAboundaryConditions -lSOWFAABLForcing -lSOWFAmeshTools -lSOWFAmiscTools -lSOWFATurbineModelsOpenFAST -L$(OPENFAST_DIR)/lib -laerodyn14lib -laerodynlib -lbeamdynlib -lelastodynlib -lextptfm_mckflib -lfeamlib -lfoamfastlib -lhydrodynlib -licedynlib -licefloelib -lifwlib -lmaplib -lmoordynlib -lnwtclibs -lopenfastcpplib -lopenfastlib -lopenfast_postlib -lopenfast_prelib -lfoamtypeslib -lorcaflexlib -lscfastlib -lsctypeslib -lservodynlib -lsubdynlib $(BLASLIB) -L$(HDF5_DIR)/lib/ -lhdf5_hl -lhdf5
+# 67 "Make/options"
+

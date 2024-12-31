@@ -6,7 +6,8 @@ EXE_INC = \
     -I$(LIB_SRC)/meshTools/lnInclude \
     $(PFLAGS) \
     $(PINC) \
-    -I$(OPENFAST_DIR)/include
+    -I$(OPENFAST_DIR)/include \
+    -I$(HDF5_INCLUDE) 
 
 LIB_LIBS = \
     -lfiniteVolume \
@@ -23,7 +24,6 @@ LIB_LIBS = \
     -licedynlib \
     -licefloelib \
     -lifwlib \
-    -lmapcpplib \
     -lmaplib \
     -lmoordynlib \
     -lnwtclibs \
@@ -31,7 +31,7 @@ LIB_LIBS = \
     -lopenfastlib \
     -lopenfast_postlib \
     -lopenfast_prelib \
-    -lopenfoamtypeslib \
+    -lfoamtypeslib \
     -lorcaflexlib \
     -lscfastlib \
     -lsctypeslib \

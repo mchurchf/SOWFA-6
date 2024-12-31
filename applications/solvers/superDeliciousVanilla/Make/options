@@ -18,7 +18,7 @@ EXE_INC = \
     $(PFLAGS) \
     $(PINC) \
     -I$(OPENFAST_DIR)/include \
-    -I$(HDF5_DIR)/include/
+    -I$(HDF5_INCLUDE)
 
 
 EXE_LIBS = \
@@ -48,14 +48,13 @@ EXE_LIBS = \
     -licefloelib \
     -lifwlib \
     -lmaplib \
-    -lmapcpplib \
     -lmoordynlib \
     -lnwtclibs \
     -lopenfastcpplib \
     -lopenfastlib \
     -lopenfast_postlib \
     -lopenfast_prelib \
-    -lopenfoamtypeslib \
+    -lfoamtypeslib \
     -lorcaflexlib \
     -lscfastlib \
     -lsctypeslib \

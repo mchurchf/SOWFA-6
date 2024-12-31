@@ -3,6 +3,7 @@ README, created 2009 12 29, J. Michalakes
        modified 2014 09 17, M. Churchfield
        modified 2017 11 07, E. Quon
        modified 2021 09 02, R. Thedin
+       modified 2024 08 13, D. Major
 
 Gunzip and untar the file, which creates a directory WRFTOOF ("WRF to OpenFOAM").
 Cd into WRFTOOF and type make.  Then cd into run and refer to that README
@@ -83,6 +84,19 @@ and specified to WRF:
 If you receive a "NetCDF: One or more variable sizes violate format constraints"
 error, you can manually edit the CDL file and remove all variables in the header
 except for XLAT and XLONG prior to calling ncgen.
+
+If PHB and PB are specified in external files (possibly typical of idealized WRF simulations),
+use "-phbfile" flag and provide the ph/phb file location path as follows:
+
+  ./wrftoofIdealHurricane auxhist15_d05_2005-01-15_02_01_00 -startdate 2005-01-15_02_01_00 -phbfile /path_to_file/hgt_file_name.nc
+
+PH/PHB are required to calculate the vertical discritization of the WRF grid over time to properly
+map the boundary conditions and internal field.
+
+If using idealize WRF simulation data, where XLAT/XLONG are not used in WRF, use "-idealSim" flag as follows
+to tell wrftoof to generate a cartesian grid based on DX/DY in the WRF netcdf solution file:
+
+  ./wrftoofIdealHurricane auxhist15_d05_2005-01-15_02_01_00 -startdate 2005-01-15_02_01_00 -idealSim
 
 
 The auxhist15 file in the run directory is one of the 32m resolution

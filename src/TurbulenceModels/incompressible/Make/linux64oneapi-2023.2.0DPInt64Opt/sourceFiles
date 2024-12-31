@@ -1,0 +1,2 @@
+SOURCE = \
+makeSOWFAincompressibleTurbulenceModels/makeSOWFAincompressibleTurbulenceModels.C 

@@ -1,0 +1,162 @@
+#!/bin/bash
+#SOWFA-[OF version]-[remote]-[branch/tag]+[compiler]+[mpi type]+openfast-[remote]-[branch/tag]-[openfast precision]
+SOWFA-6-nrel-dev+oneapi-2023.2.0+cray-mpich-8.1.28+openfast-nrel-3.5.0-DP()
+{
+   # Set the OpenFOAM version.
+   export OPENFOAM_VERSION=6
+   export OPENFOAM_NAME=OpenFOAM-$OPENFOAM_VERSION
+   export FOAM_VERBOSE=true
+
+   # Important locations.
+   export inst_loc=/home/mchurchf/software-2024-03
+   export local_inst_loc=/home/dmajor
+   export spack_loc=$inst_loc/spack
+   export openfoam_loc=$inst_loc/$OPENFOAM_NAME
+   export sowfa_loc=$local_inst_loc/SOWFA-$OPENFOAM_VERSION
+
+   # Compiler and MPI info.
+   export mpi_path=/opt/cray/pe/mpich/8.1.28/ofi/crayclang/16.0
+   export compiler='oneapi-2023.2.0'
+   export mpi='cray-mpich-8.1.28'
+   export label_type='int64'
+
+   # SOWFA version info.
+   export sowfa_remote='nrel'
+   export sowfa_branch_tag='dev'
+
+   # OpenFAST version info.
+   export openfast_remote='nrel'
+   export openfast_branch_tag='v3.5.0'
+   export openfast_precision='DP'
+
+
+
+
+   # Load the right modules.
+   echo "Purging and loading modules..."
+
+   module purge
+
+   module use $spack_loc/share/spack/modules/linux-rhel8-sapphirerapids
+
+   module load PrgEnv-intel/8.5.0
+   module load libfabric/1.15.2.0
+   module load cray-libsci/23.12.5
+   module load intel/2023.2.0
+   module load craype-network-ofi
+   module load craype-x86-spr
+   module load cray-mpich/8.1.28
+   module load cmake
+   module load hdf5/1.14.1-2-cray-mpich-intel
+
+   echo "Loading boost..."
+   module load boost/1.69.0-$compiler
+   echo "Loading cgal..."
+   module load cgal/4.13-intel-2021.10.0
+   echo "Loading flex..."
+   module load flex/2.6.4-$compiler
+   echo "Loading gmp..."
+   module load gmp/6.1.2-$compiler
+   echo "Loading hdf5..."
+   module load hdf5/1.14.3-$compiler
+   echo "Loading libxml2..."
+   module load libxml2/2.10.3-$compiler
+   echo "Loading metis..."
+   module load metis/5.1.0-$compiler
+   echo "Loading mpfr..."
+   module load mpfr/4.0.2-$compiler
+   echo "Loading parmetis..."
+   module load parmetis/4.0.3-$compiler
+   echo "Loading scotch..."
+   module load scotch/6.0.10-$compiler
+   echo "Loading zlib..."
+   module load zlib-ng/2.1.5-$compiler
+   echo "Loading yaml-cpp..."
+   module load yaml-cpp/0.7.0-$compiler
+   echo "Loading zoltan..."
+   module load zoltan/3.901-$compiler
+  #echo "Loading netcdf..."
+  #module load netcdf-fortran/4.5.2/3buq
+
+   module list
+
+
+   # Some required variables don't get set correctly with modules, so set here.
+   export MPI_ROOT_DIR=$mpi_path
+   export MPI_ROOT=$mpi_path
+   export MPI_CXX=$mpi_path/bin/mpicxx
+   export MPI_CC=$mpi_path/bin/mpicc
+   export MPI_F90=$mpi_path/bin/mpif90
+   export PATH=/nopt/nrel/apps/compilers/07-23/spack/opt/spack/linux-rhel8-icelake/gcc-8.4.0/binutils-2.40-cx5sntocvfpc734wpfu6rwz6fh7lcyqf/bin:$PATH
+   export LD_LIBRARY_PATH=/home/mchurchf/software-2024-03/spack/opt/spack/linux-rhel8-sapphirerapids/intel-2021.10.0/cgal-4.13-7ldn24cwgdktqbbc7m5dehbpii6i76hu/lib64:$LD_LIBRARY_PATH
+
+   # These are needed to set MPICH to work properly
+   export LD_LIBRARY_PATH=/nopt/nrel/apps/cray-mpich-stall/libs_mpich_nrel_intel:$LD_LIBRARY_PATH
+   export MPICH_OFI_CQ_STALL=1 # Crucial for enabling the stall
+   export MPICH_OFI_CQ_STALL_USECS=16 # Crucial for enabling the stall
+
+   # Needed to give OpenFAST access to BLAS/LAPACK.
+   export BLAS_LIBRARIES=${CRAY_PE_LIBSCI_PREFIX_DIR}/lib/libsci_intel.a
+   export LAPACK_LIBRARIES=${CRAY_PE_LIBSCI_PREFIX_DIR}/lib/libsci_intel.a
+  #export BLAS_LIBRARIES=/nopt/nrel/ecom/hpacf/software/2020-07/spack/opt/spack/linux-centos7-skylake_avx512/gcc-8.4.0/netlib-lapack-3.8.0-trmttxob6lylknj5wgcy6qgaqe66keag/lib64
+  #export BLASLIB=/nopt/nrel/ecom/hpacf/software/2020-07/spack/opt/spack/linux-centos7-skylake_avx512/gcc-8.4.0/netlib-lapack-3.8.0-trmttxob6lylknj5wgcy6qgaqe66keag/lib64/libblas.so
+
+
+
+   # Unset OpenFOAM environment variables.
+   if [ -z "$FOAM_INST_DIR/$OPENFOAM_NAME" ]; then
+      echo "Nothing to unset..."
+   else
+      echo "     *Unsetting OpenFOAM environment variables..."
+      if [ -f "$FOAM_INST_DIR/$OPENFOAM_NAME/etc/config.sh/unset" ]; then
+         . $FOAM_INST_DIR/$OPENFOAM_NAME/etc/config.sh/unset
+      else
+         . $FOAM_INST_DIR/$OPENFOAM_NAME/etc/config/unset.sh
+      fi
+   fi
+
+
+   
+   # Set the OpenFOAM version and installation directory
+   export FOAM_INST_DIR=$openfoam_loc
+   export WM_PROJECT_USER_DIR=/home/$USER/$USER-$OPENFOAM_VERSION
+   export FOAMY_HEX_MESH=true
+
+
+
+
+   # Source the OpenFOAM main environment.
+   foamDotFile=$FOAM_INST_DIR/etc/bashrc.$compiler.$mpi.$label_type
+   echo $foamDotFile
+   if [ -f $foamDotFile ] ; then
+      echo "Sourcing $foamDotFile..."
+      source $foamDotFile
+   fi
+
+   echo "FOAM_INST_DIR = "$FOAM_INST_DIR
+
+
+
+   # For wmake compiling.
+   export WM_NCOMPPROCS=24
+   export WM_COLOURS="white blue green cyan red magenta yellow"
+
+
+
+   # Alias to tutorials.
+   alias tut='cd /home/$USER/OpenFOAM/$USER-$OPENFOAM_VERSION/tutorials'
+
+
+
+   # Set the SOWFA installation directory.
+   export platform_dir=$WM_OPTIONS.sowfa-$sowfa_remote-$sowfa_branch_tag
+   export SOWFA_DIR=$sowfa_loc
+   export SOWFA_APPBIN=$SOWFA_DIR/platforms/$platform_dir/bin
+   export SOWFA_LIBBIN=$SOWFA_DIR/platforms/$platform_dir/lib
+   export OPENFAST_DIR=$inst_loc/openfast-dev/install.$openfast_remote'-'$openfast_branch_tag'_'$openfast_precision'_'$compiler'_'$mpi
+   export LD_LIBRARY_PATH=$SOWFA_LIBBIN:$OPENFAST_DIR/lib:$LD_LIBRARY_PATH
+   export PATH=$SOWFA_APPBIN:$OPENFAST_DIR/bin:$PATH
+
+   echo "Using SOWFA executables and libraries located in $SOWFA_DIR/platforms/$platform_dir" 
+   echo "Using OpenFAST located in $OPENFAST_DIR"
+}

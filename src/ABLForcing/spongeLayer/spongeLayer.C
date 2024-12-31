@@ -219,7 +219,7 @@ void Foam::spongeLayer::update()
     Uref.z() = 0.0;
     Uref_ = dimensionedVector("Uref", dimensionSet(0, 1, -1, 0, 0, 0, 0), Uref);
 
-    volVectorField Unew= 1*U_;
+    volVectorField Unew(1*U_);
     forAll(Unew,cellI)
     {
         Unew[cellI].x()=0;
@@ -346,8 +346,8 @@ void Foam::spongeLayer::applyVerticalFilter_()
 {
     // Compute wall distance
     vector up(0,0,1);
-    volScalarField height = mesh_.C() & up;
-    surfaceScalarField heightFace = mesh_.Cf() & up;
+    volScalarField height(mesh_.C() & up);
+    surfaceScalarField heightFace(mesh_.Cf() & up);
     if (useWallDistZ_)
     {
         Info << "Calculating wall distance..." << endl;

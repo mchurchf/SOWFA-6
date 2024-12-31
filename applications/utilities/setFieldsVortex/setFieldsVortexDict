@@ -1,0 +1,54 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  2.0.x                                 |
+|   \\  /    A nd           | Web:      www.OpenFOAM.org                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+
+FoamFile
+{
+    version         2.0;
+    format          ascii;
+
+    root            "";
+    case            "";
+    instance        "";
+    local           "";
+
+    class           dictionary;
+    object          setFieldsVortexDict;
+}
+
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+#include        "../setUp"
+
+// Extents of the domain.
+xMin                       $xMin;
+yMin                       $yMin;
+
+xMax                       $xMax;
+yMax                       $yMax;
+
+// Lamb-Oseen Vortex center (calcualted to be in center of domain)
+xc                           $xc;
+yc                           $yc;
+
+// Maximum sustained velocity
+Uo                     $maxSpeed;
+
+// Radius of maximum sustained velocity from vortex center
+Rpeak                     $Rpeak;
+
+// Convecting velocity
+Uc                           $Uc;
+Vc                           $Vc;
+
+// Update internal field.
+updateInternalFields      true;
+
+// Update boundary field.
+updateBoundaryFields      false;
+
+// ************************************************************************* //

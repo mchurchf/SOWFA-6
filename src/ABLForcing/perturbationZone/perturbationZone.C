@@ -1087,7 +1087,7 @@ Foam::perturbationZone<Type>::perturbationZone
     field_(field),
 
     // Set the pointer to the velocity field
-    U_(field.db().objectRegistry::lookupObject<volVectorField>("U")),
+    U_(field.db().objectRegistry::template lookupObject<volVectorField>("U")),
 
     // Set the heigh above ground as first absolute height.
     zAgl_(mesh_.C() & vector(0,0,1)),
