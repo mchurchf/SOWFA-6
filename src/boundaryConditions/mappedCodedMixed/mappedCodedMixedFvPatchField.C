@@ -25,6 +25,7 @@ License
 
 #include "mappedCodedMixedFvPatchField.H"
 #include "volFields.H"
+#include "surfaceWriter.H"
 
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 
@@ -53,7 +54,8 @@ Foam::mappedCodedMixedFvPatchField<Type>::mappedCodedMixedFvPatchField
   //fixedValueFvPatchField<Type>(p, iF, dict),
     codedMixedFvPatchField<Type>(p, iF, dict),
     mappedPatchFieldBase<Type>(this->mapper(p, iF), *this, dict),
-    window_(readScalar(dict.lookup("window")))
+    window_(readScalar(dict.lookup("window"))),
+    surfaceFormat_(dict.lookupOrDefault<word>("surfaceFormat","VTK"))
 {}
 
 
@@ -69,7 +71,8 @@ Foam::mappedCodedMixedFvPatchField<Type>::mappedCodedMixedFvPatchField
   //fixedValueFvPatchField<Type>(ptf, p, iF, mapper),
     codedMixedFvPatchField<Type>(ptf, p, iF, mapper),
     mappedPatchFieldBase<Type>(this->mapper(p, iF), *this, ptf),
-    window_(ptf.window_)
+    window_(ptf.window_),
+    surfaceFormat_(ptf.surfaceFormat_)
 {}
 
 
@@ -82,7 +85,8 @@ Foam::mappedCodedMixedFvPatchField<Type>::mappedCodedMixedFvPatchField
   //fixedValueFvPatchField<Type>(ptf),
     codedMixedFvPatchField<Type>(ptf),
     mappedPatchFieldBase<Type>(ptf),
-    window_(ptf.window_)
+    window_(ptf.window_),
+    surfaceFormat_(ptf.surfaceFormat_)
 {}
 
 
@@ -96,7 +100,8 @@ Foam::mappedCodedMixedFvPatchField<Type>::mappedCodedMixedFvPatchField
   //fixedValueFvPatchField<Type>(ptf, iF),
     codedMixedFvPatchField<Type>(ptf, iF),
     mappedPatchFieldBase<Type>(this->mapper(this->patch(), iF), *this, ptf),
-    window_(ptf.window_)
+    window_(ptf.window_),
+    surfaceFormat_(ptf.surfaceFormat_)
 {}
 
 
@@ -152,6 +157,7 @@ void Foam::mappedCodedMixedFvPatchField<Type>::updateCoeffs()
 
     // Grab the upstream information
     Field<Type> sampledField = this->mappedField();
+    Info << sampledField.size() << endl;
 
     //Initialize the sampledFieldAvg with the first sampled value
     if (this->db().time().value() == this->db().time().startTime().value())
@@ -170,6 +176,31 @@ void Foam::mappedCodedMixedFvPatchField<Type>::updateCoeffs()
 
     this->refValue() += perturbation;
     
+}
+
+
+template<class Type>
+void Foam::mappedCodedMixedFvPatchField<Type>::writeSamplingPlane()
+{
+    if ((surfaceFormat_ != "none") || (surfaceFormat_ != "None"))
+    {
+        if (Pstream::master())
+        {
+            autoPtr<surfaceWriter> writer(surfaceWriter::New(surfaceFormat_));
+/*
+	    writer->write
+            (
+	        this->writeTimeDir(),
+		"surfaceSamplingOutput",
+		points_,
+		faces_,
+		"sampledFieldAvg",
+		sampledFieldAvg,
+		false
+	    );
+*/
+	}
+    }
 }
 
 

@@ -118,6 +118,9 @@ protected:
         // -Constant for time-averaging window
         scalar window_;
 
+	// -Format of sampling plane surface write out
+	word surfaceFormat_;
+
 
 public:
 
@@ -193,6 +196,9 @@ public:
 
             //- Update the coefficients associated with the patch field
             virtual void updateCoeffs();
+
+	//- Write sampling plane data
+	void writeSamplingPlane();
 
         //- Write
         virtual void write(Ostream&) const;
